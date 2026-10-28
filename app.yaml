@@ -1,0 +1,9 @@
+kind: wasmer.io/App.v0
+name: birkiddode
+owner: birkid
+locality:
+  regions:
+    - us-losa1
+    - us-hillsboro
+    - us-ashburn
+    - ca-beau1

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>控制面板</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--text:#1c2430;--muted:#6b7686;--line:#e2e7ef;--accent:#2f6df6;--ok:#1fa971;--warn:#e8890c;--off:#c5ccd8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141c;--card:#18202b;--text:#e8edf5;--muted:#8d99ab;--line:#263243;--accent:#5b8cff;--ok:#38c98a;--warn:#f0a03a;--off:#3a475a}}
+:root[data-theme="dark"]{--bg:#0f141c;--card:#18202b;--text:#e8edf5;--muted:#8d99ab;--line:#263243;--accent:#5b8cff;--ok:#38c98a;--warn:#f0a03a;--off:#3a475a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:22px;margin:0}
+.sub{color:var(--muted);font-size:13px}
+.top{display:flex;gap:8px;align-items:center}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 14px;border-radius:10px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{background:var(--warn);border-color:var(--warn);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2{font-size:14px;margin:0 0 12px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.switch{position:relative;width:46px;height:26px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:1}
+.switch span{position:absolute;inset:0;background:var(--off);border-radius:13px;transition:.2s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--ok)}
+.switch input:checked+span::after{transform:translateX(20px)}
+.big{font-size:38px;font-weight:700}
+.unit{font-size:15px;color:var(--muted);margin-left:2px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.stat{display:flex;justify-content:space-between;font-size:13px;margin-top:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:6px}
+.dot.off{background:var(--off)}
+.log{height:150px;overflow:auto;font:12px/1.7 ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.log b{color:var(--text);font-weight:500}
+.wide{grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🎛️ 控制面板</h1>
+      <div class="sub"><span class="dot" id="sysDot"></span><span id="sysTxt">系统运行中</span> · <span id="clock"></span></div>
+    </div>
+    <div class="top">
+      <button id="themeBtn">切换主题</button>
+      <button class="danger" id="stopBtn">紧急停止</button>
+      <button class="primary" id="resetBtn">恢复默认</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>电源与开关</h2>
+      <div class="row"><span>主电源</span><label class="switch"><input type="checkbox" data-k="power" checked><span></span></label></div>
+      <div class="row"><span>照明</span><label class="switch"><input type="checkbox" data-k="light" checked><span></span></label></div>
+      <div class="row"><span>风扇</span><label class="switch"><input type="checkbox" data-k="fan"><span></span></label></div>
+      <div class="row"><span>自动模式</span><label class="switch"><input type="checkbox" data-k="auto"><span></span></label></div>
+    </section>
+
+    <section class="card">
+      <h2>目标温度</h2>
+      <div><span class="big" id="tempVal">24</span><span class="unit">°C</span></div>
+      <input type="range" id="temp" min="16" max="30" value="24">
+      <div class="stat"><span>当前室温</span><b id="curTemp">23.4°C</b></div>
+    </section>
+
+    <section class="card">
+      <h2>亮度 / 音量</h2>
+      <div class="row" style="display:block;border:0;padding-top:0">
+        <div class="stat" style="margin:0"><span>亮度</span><b id="briVal">70%</b></div>
+        <input type="range" id="bri" min="0" max="100" value="70">
+      </div>
+      <div class="row" style="display:block">
+        <div class="stat" style="margin:0"><span>音量</span><b id="volVal">40%</b></div>
+        <input type="range" id="vol" min="0" max="100" value="40">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>运行模式</h2>
+      <div class="seg" id="modes">
+        <button data-m="节能">节能</button>
+        <button data-m="标准" class="on">标准</button>
+        <button data-m="强力">强力</button>
+        <button data-m="睡眠">睡眠</button>
+      </div>
+      <div class="stat"><span>当前模式</span><b id="modeTxt">标准</b></div>
+    </section>
+
+    <section class="card">
+      <h2>实时状态</h2>
+      <div class="stat" style="margin-top:0"><span>CPU 负载</span><b id="cpuTxt">0%</b></div>
+      <div class="bar"><i id="cpuBar"></i></div>
+      <div class="stat"><span>功率</span><b id="pwrTxt">0 W</b></div>
+      <div class="bar"><i id="pwrBar"></i></div>
+    </section>
+
+    <section class="card">
+      <h2>定时关闭</h2>
+      <div class="seg" id="timers">
+        <button data-t="0" class="on">关闭</button>
+        <button data-t="30">30秒</button>
+        <button data-t="60">60秒</button>
+        <button data-t="120">120秒</button>
+      </div>
+      <div class="stat"><span>剩余</span><b id="timerTxt">—</b></div>
+    </section>
+
+    <section class="card wide">
+      <h2>操作日志</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var state={power:true,light:true,fan:false,auto:false,temp:24,bri:70,vol:40,mode:"标准",timer:0};
+  var defaults=JSON.parse(JSON.stringify(state));
+  var left=0,tid=null;
+
+  function log(msg){
+    var d=new Date(),t=d.toTimeString().slice(0,8);
+    var el=$("#log");
+    el.insertAdjacentHTML("afterbegin","<div>["+t+"] <b>"+msg+"</b></div>");
+    while(el.children.length>60)el.removeChild(el.lastChild);
+  }
+  function sysUI(){
+    $("#sysDot").className="dot"+(state.power?"":" off");
+    $("#sysTxt").textContent=state.power?"系统运行中":"系统已关闭";
+  }
+  function render(){
+    document.querySelectorAll("input[data-k]").forEach(function(i){i.checked=!!state[i.dataset.k]});
+    $("#temp").value=state.temp;$("#tempVal").textContent=state.temp;
+    $("#bri").value=state.bri;$("#briVal").textContent=state.bri+"%";
+    $("#vol").value=state.vol;$("#volVal").textContent=state.vol+"%";
+    $("#modeTxt").textContent=state.mode;
+    document.querySelectorAll("#modes button").forEach(function(b){b.classList.toggle("on",b.dataset.m===state.mode)});
+    document.querySelectorAll("#timers button").forEach(function(b){b.classList.toggle("on",+b.dataset.t===state.timer)});
+    sysUI();
+  }
+  var names={power:"主电源",light:"照明",fan:"风扇",auto:"自动模式"};
+  document.querySelectorAll("input[data-k]").forEach(function(i){
+    i.addEventListener("change",function(){
+      state[i.dataset.k]=i.checked;
+      log(names[i.dataset.k]+(i.checked?"已开启":"已关闭"));
+      sysUI();
+    });
+  });
+  $("#temp").addEventListener("input",function(e){state.temp=+e.target.value;$("#tempVal").textContent=state.temp});
+  $("#temp").addEventListener("change",function(){log("目标温度设为 "+state.temp+"°C")});
+  $("#bri").addEventListener("input",function(e){state.bri=+e.target.value;$("#briVal").textContent=state.bri+"%"});
+  $("#bri").addEventListener("change",function(){log("亮度设为 "+state.bri+"%")});
+  $("#vol").addEventListener("input",function(e){state.vol=+e.target.value;$("#volVal").textContent=state.vol+"%"});
+  $("#vol").addEventListener("change",function(){log("音量设为 "+state.vol+"%")});
+
+  $("#modes").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    state.mode=b.dataset.m;render();log("切换模式：<b>"+state.mode+"</b>");
+  });
+  $("#timers").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    state.timer=+b.dataset.t;left=state.timer;render();
+    log(state.timer?"设置定时关闭 "+state.timer+" 秒":"取消定时关闭");
+  });
+
+  $("#stopBtn").addEventListener("click",function(){
+    state.power=state.light=state.fan=state.auto=false;left=0;state.timer=0;
+    render();log("⚠ 紧急停止已触发");
+  });
+  $("#resetBtn").addEventListener("click",function(){
+    state=JSON.parse(JSON.stringify(defaults));left=0;render();log("已恢复默认设置");
+  });
+  $("#themeBtn").addEventListener("click",function(){
+    var r=document.documentElement;
+    var dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+    r.dataset.theme=dark?"light":"dark";
+  });
+
+  tid=setInterval(function(){
+    $("#clock").textContent=new Date().toLocaleString("zh-CN",{hour12:false});
+    if(left>0){
+      left--;$("#timerTxt").textContent=left+" 秒";
+      if(left===0){state.power=false;state.timer=0;render();log("定时结束，主电源已关闭");$("#timerTxt").textContent="—"}
+    }else if(!state.timer){$("#timerTxt").textContent="—"}
+
+    var on=state.power;
+    var cpu=on?Math.round(15+Math.random()*30+(state.mode==="强力"?25:0)):0;
+    var pwr=on?Math.round((state.light?state.bri*0.6:0)+(state.fan?45:0)+(state.mode==="强力"?80:state.mode==="节能"?20:40)+Math.random()*8):0;
+    $("#cpuTxt").textContent=cpu+"%";$("#cpuBar").style.width=cpu+"%";
+    $("#pwrTxt").textContent=pwr+" W";$("#pwrBar").style.width=Math.min(100,pwr/2.5)+"%";
+    var cur=on?(state.fan||state.auto?state.temp+0.4+Math.random()*0.6:25+Math.random()*0.8):26;
+    $("#curTemp").textContent=cur.toFixed(1)+"°C";
+  },1000);
+
+  render();log("面板已就绪");
+})();
+</script>
+</body>
+</html>
